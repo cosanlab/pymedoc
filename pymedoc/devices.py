@@ -38,6 +38,7 @@ class Pathway(object):
         self.BUFFER_SIZE = buffer_size
         self.timeout = timeout
         self.verbose = verbose
+        self.socket = None
         self.test_states = {
         0: 'IDLE',
         1: 'RUNNING',
@@ -85,22 +86,36 @@ class Pathway(object):
         except:
             raise IOError('Cannot establish connection, check IP and port number is correct and the host computer is on.')
 
-    def call(self, command, protocol=None, verbose = None):
+    def _create_connection(self):
+        """Create and return new socket connection"""
+        socket.setdefaulttimeout(self.timeout)
+        s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        s.connect((self.ip,self.port_number))
+        return s
+
+    def call(self, command, protocol=None, reuse_socket=False, verbose = False):
         """
         Send command to device.
 
         Args:
             command (str/int): command name or command_id number to send to device
             protocol (str/int): protocol number on device to issue command to (only needed for command TEST_PROGRAM)
+            reuse_socket (bool): try to reuse the last created socket connection; *NOT CURRENTLY FUNCTIONAL*
             verbose (bool): whether to print out the device callback
 
         Returns:
             response (dict): response from Medoc system
         """
 
-        socket.setdefaulttimeout(self.timeout)
-        s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        s.connect((self.ip,self.port_number))
+        if reuse_socket:
+            raise NotImplementedError("Reusing sockets does not currently work.")
+            if self.socket:
+                s = self.socket
+            else:
+                raise ValueError("No previous sockets exist")
+        else:
+            s = self._create_connection()
+            self.socket = s
 
         if isinstance(command,str):
             command = self.command_codes.keys()[self.command_codes.values().index(command)]
@@ -215,19 +230,47 @@ class Pathway(object):
         test_time = '%.2d:%.2d:%.2d.%3d' %(hours,mins,secs,msecs)
         return test_time
 
+    def poll_for_change(self,to_watch,desired_value,poll_interval=.5,poll_max=-1,verbose=False,reuse_socket=False):
+        """
+        Poll system for a value change. Useful for waiting until the Medoc system has transitioned to a specific state in order to issue another command, but the transition length is unknowable.
+
+        Args:
+            to_watch (str): the response field we should be monitoring; most often 'test_state' or 'pathway_state'
+            desired_value (str): the desired value of the field to wait on, i.e. keep checking until response_field has this value
+            poll_interval (float): how often to poll; default .5s
+            poll_max (int): upper limit on polling attempts; default -1 (unlimited)
+            verbose (bool): print poll attempt number and current state
+            reuse_socket (bool): try to reuse the last created socket connection; *NOT CURRENTLY FUNCTIONAL*
+
+        Returns:
+            status (bool): whether desired_value was achieved
+
+        """
+        val = ''
+        count = 1
+        while val != desired_value:
+            if verbose:
+                print("Poll: {}".format(str(count)))
+            resp = self.call('STATUS',reuse_socket=False)
+            val = resp[to_watch]
+            if verbose:
+                print("Current value: {}".format(val))
+            time.sleep(poll_interval)
+            count += 1
+            if poll_max > 0 and count > poll_max:
+                print("Polling limit exceeded")
+                return False
+        return True
+
     #Convenience wrappers around call method
 
-    def poll(self,response_field,response_value,poll_interval=.5):
-        """
-
-        """
     def status(self):
         """ Convenience method."""
         return self.call('STATUS')
 
     def program(self, protocol):
         """ Convenience method."""
-        return self.call('TEST_PROGRAM',protocol)
+        return self.call('TEST_PROGRAM',protocol=protocol)
 
     def start(self):
         """ Convenience method."""
