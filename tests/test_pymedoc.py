@@ -3,7 +3,6 @@
 
 """Tests for `pymedoc` package."""
 
-def test_something():
+def test_pathway():
     """Sample test function ."""
-    # from bs4 import BeautifulSoup
-    # assert 'GitHub' in BeautifulSoup(response.content).title.string
+    # from pymedoc.devices import Pathway

@@ -8,7 +8,7 @@
 Python package for wireless network triggeriing of Medoc Pathway Thermal Stimulation System
 
 ## Installation
-`pip install git+https://github.com/ejolly/pymedoc`
+`pip install git+https://github.com/cosanlab/pymedoc`
 
 
 ## [Documentation](https://pymedoc.readthedocs.io/en/latest/index.html)
@@ -18,4 +18,3 @@ Python package for wireless network triggeriing of Medoc Pathway Thermal Stimula
 #### Credit
 
 This package was created with [Cookiecutter](https://github.com/audreyr/cookiecutter) with the following [template](https://github.com/ejolly/cookiecutter-pypackage).
-http://eshinjolly.com/pybest/

@@ -62,9 +62,6 @@ coverage: ## check code coverage quickly with the default Python
 	$(BROWSER) htmlcov/index.html
 
 docs: ## generate Sphinx HTML documentation, including API docs
-	rm -f docs/pymedoc.rst
-	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ pymedoc
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
@@ -81,5 +78,5 @@ dist: clean ## builds source and wheel package for pypi
 	python setup.py bdist_wheel
 	ls -l dist
 
-install: clean ## install this package locally
-	python setup.py install
+install: clean-build clean-pyc clean-test ## install this package locally
+	pip install -e .

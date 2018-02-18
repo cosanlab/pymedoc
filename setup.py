@@ -9,7 +9,7 @@ with open('requirements.txt') as f:
 setup(
     name='pymedoc',
     version='0.1.0',
-    description="Python package for wireless network triggeriing of Medoc Pathway Thermal Stimulation System",
+    description="Python package for wireless network triggering of Medoc Pathway Thermal Stimulation System",
     long_description="",
     author="Cosan Lab",
     author_email='cosanlab@gmail.com',
