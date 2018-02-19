@@ -230,7 +230,7 @@ class Pathway(object):
         test_time = '%.2d:%.2d:%.2d.%3d' %(hours,mins,secs,msecs)
         return test_time
 
-    def poll_for_change(self,to_watch,desired_value,poll_interval=.5,poll_max=-1,verbose=False,reuse_socket=False):
+    def poll_for_change(self,to_watch,desired_value,poll_interval=.5,poll_max=-1,verbose=False,server_lag=1.,reuse_socket=False):
         """
         Poll system for a value change. Useful for waiting until the Medoc system has transitioned to a specific state in order to issue another command, but the transition length is unknowable.
 
@@ -240,6 +240,7 @@ class Pathway(object):
             poll_interval (float): how often to poll; default .5s
             poll_max (int): upper limit on polling attempts; default -1 (unlimited)
             verbose (bool): print poll attempt number and current state
+            server_lag (float): sometimes if the socket connection is pinged too quickly after a value change the subsequent command after this method is called can get missed. This adds an additional layer of timing delay before returning from this method to prevent this; default 1s
             reuse_socket (bool): try to reuse the last created socket connection; *NOT CURRENTLY FUNCTIONAL*
 
         Returns:
@@ -260,6 +261,7 @@ class Pathway(object):
             if poll_max > 0 and count > poll_max:
                 print("Polling limit exceeded")
                 return False
+        time.sleep(server_lag)
         return True
 
     #Convenience wrappers around call method
