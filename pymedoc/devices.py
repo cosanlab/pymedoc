@@ -128,6 +128,8 @@ class Pathway(object):
         time.sleep(0.5)
         data = s.recv(self.BUFFER_SIZE)
         response = self._format_response(data,nbytes)
+        if not response:
+            return self.call(command,protocol,verbose=verbose)
         if verbose:
             print_flag = verbose
         else:
@@ -193,17 +195,23 @@ class Pathway(object):
         data_int = [int(elem.encode('hex'),16) for elem in data]
 
         response_dict = {}
-        response_dict['response_length'] = self._decode(data_int,'LENGTH_OFFSET')
-        response_dict['time_stamp'] = time.ctime(self._decode(data_int,'TIMESTAMP_OFFSET'))
-        response_dict['command_id'] = self.command_codes[data_int[self.segmentation_points['COMMAND_OFFSET']]]
-        response_dict['pathway_state'] = self.state_codes[data_int[self.segmentation_points['SYSTEM_STATE_OFFSET']]]
-        response_dict['test_state'] = self.test_states[data_int[self.segmentation_points['TEST_STATE_OFFSET']]]
-        response_dict['response'] =  self.response_codes[self._decode(data_int,'RESULT_OFFSET')]
-        response_dict['test_time_stamp'] = self._decode_test_time(data_int)
+        try:
+            response_dict['response_length'] = self._decode(data_int,'LENGTH_OFFSET')
+            response_dict['time_stamp'] = time.ctime(self._decode(data_int,'TIMESTAMP_OFFSET'))
+            response_dict['command_id'] = self.command_codes[data_int[self.segmentation_points['COMMAND_OFFSET']]]
+            response_dict['pathway_state'] = self.state_codes[data_int[self.segmentation_points['SYSTEM_STATE_OFFSET']]]
+            response_dict['test_state'] = self.test_states[data_int[self.segmentation_points['TEST_STATE_OFFSET']]]
+            response_dict['response'] =  self.response_codes[self._decode(data_int,'RESULT_OFFSET')]
+            response_dict['test_time_stamp'] = self._decode_test_time(data_int)
 
-        if response_dict['response_length'] > 13:
-            #Covert to uint8 and native?
-            response_dict['error_message'] = data[self.segmentation_points['ERROR_MESSAGE_OFFSET']]
+            if response_dict['response_length'] > 13:
+                #Covert to uint8 and native?
+                response_dict['error_message'] = data[self.segmentation_points['ERROR_MESSAGE_OFFSET']]
+        except Exception as e:
+            print("ERROR FORMATTING RESPONSE")
+            print("data_int: ", data_int)
+            print("data: ", data)
+            print("nbyes: ", nbytes)
         return response_dict
 
     def _decode(self,data_int,whichtime):
@@ -253,7 +261,10 @@ class Pathway(object):
             if verbose:
                 print("Poll: {}".format(str(count)))
             resp = self.call('STATUS',reuse_socket=False)
-            val = resp[to_watch]
+            if resp:
+                val = resp[to_watch]
+            else:
+                val = 'RESPONSE_FORMAT_ERROR'
             if verbose:
                 print("Current value: {}".format(val))
             time.sleep(poll_interval)
